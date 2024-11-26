@@ -1,58 +1,93 @@
-
 <template>
-<div class="bg- bg-opacity-50 h-screen w-screen backdrop-blur-md p-4 rounded-lg">
-  <h1>Todo List</h1>
-<p v-if="tasks.length === 0">No tasks</p>
-<form action="" @submit.prevent="addTask">
 
-  <input type="text" class="w-full sm:w-3/5 md:1/2 lg:1/3 px-4 py-2 mx-4 my-2 border rounded-lg  focus:outline-none" v-model="newTask" placeholder="Enter a task">
-  <button>Add</button>
+  <Layout>
+    <template #header>
+      <slot name="header"></slot>
+    </template>
+    <template #aside>
+      <slot name="aside"></slot>
+    </template>
+    <template #main>
+      <slot name="main"></slot>
+    </template>
+    <template #footer>
+      <slot name="footer"></slot>
+    </template>
+  </Layout>
 
-  <hr>
-  <div :class="container" v-for="task in tasks" :key="task.id">
-    <input type="checkbox"  v-model="task.completed" @click="" >
-    <span :style="{ textDecoration: task.completed ? 'line-through' : 'none' }">{{ task.title }}</span>
-    
+  <form @submit.prevent="addTodo">
+    <fieldset role="group">
+      <input type="text" placeholder="Ajouter une tâche" v-model="newTodo" />
+      <button :disabled="newTodo.length == 0">Ajouter</button>
+    </fieldset>
+  </form>
+
+  <div v-if="todos.length === 0">Pas de tâche à faire</div>
+  <div v-else>
+    <ul>
+      <li
+        v-for="todo in sortedTodos"
+        :key="todo.date"
+        :class="{ completed: todo.completed }"
+      >
+      <Checkbox :label="todo.title"  v-model="todo.completed" /> 
+      </li>
+    </ul>
+    <label>
+      <input type="checkbox" v-model="hideCompleted" />
+      masquer les tâches terminées
+    </label>
+    <p v-if="remainingTodos > 0">{{ remainingTodos }} tâches restantes</p>
+   
   </div>
-
-</form>
-</div>
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue';
+import Checkbox from './Checkbox.vue';
+import Button from './Button.vue';
+import Layout from './Layout.vue';
 
-const todos  =  ref([])
+const todos = ref([
+  {
+    title: 'Tâche 1',
+    completed: false,
+    date: Date.now() + Math.random()
+  }
+]);
 
-const newTask =  ref('')
+const hideCompleted = ref(false);
 
-const addTask  = () => {
-  tasks.value.push( {
-    title :  newTask.value,
-    completed :  false,
-    date : new Date()
-  })
-  newTask.value = ''
-}
+const newTodo = ref('');
 
-const updateStatus = (task) => {
-  task.completed = !task.completed
-}
+const addTodo = () => {
+  if (!newTodo.value.trim()) return;
+  todos.value.push({
+    title: newTodo.value.trim(),
+    completed: false,
+    date: Date.now() + Math.random()
+  });
+  newTodo.value = '';
+};
 
-//  sortTasks(){
-//   return tasks.value.sort((a, b) => a.date - b.date)
-// }
+const sortedTodos = computed(() => {
+  const sorted = [...todos.value].sort((a, b) =>
+    a.completed > b.completed ? 1 : -1
+  );
+  if (hideCompleted.value) {
+    return sorted.filter(t => !t.completed);
+  }
+  return sorted;
+});
 
+const remainingTodos = computed(() => {
+  return todos.value.filter(t => !t.completed).length;
+});
 </script>
 
 <style>
-
-.container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
+.completed {
+  opacity: 0.4;
+  text-decoration: line-through;
 }
-
 </style>
